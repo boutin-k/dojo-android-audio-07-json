@@ -33,9 +33,9 @@ public class JsonParser {
   public Song getSong(int index) { return mSongs.get(index); }
 
   /**
-   *
-   * @param inputStream
-   * @throws IOException
+   * Reads a JSON (RFC 4627) encoded value as a stream of tokens.
+   * @param inputStream InputStream: steam reader
+   * @throws IOException Signals that an Input/Output exception of some sort has occurred.
    */
   public void readJsonStream(InputStream inputStream) throws IOException {
     // try with statement works here because JsonReader implement Closeable interface
@@ -58,9 +58,9 @@ public class JsonParser {
   }
 
   /**
-   *
-   * @param reader
-   * @throws IOException
+   * Reads a JSONArray (RFC 4627) encoded value as a stream of tokens.
+   * @param reader JsonReader: JSON streams
+   * @throws IOException Signals that an Input/Output exception of some sort has occurred.
    */
   private void readJsonArray(JsonReader reader) throws IOException {
     reader.beginArray();
