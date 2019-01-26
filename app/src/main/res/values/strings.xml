@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">dojo-android-obb</string>
+    <string name="json_ok">Json read</string>
+    <string name="json_ko">Json error</string>
+</resources>

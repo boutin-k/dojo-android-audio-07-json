@@ -1,0 +1,68 @@
+package fr.wildcodeschool.dojo_android_obb.obb;
+
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.storage.OnObbStateChangeListener;
+import android.os.storage.StorageManager;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import java.io.File;
+
+import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+import static androidx.appcompat.app.AppCompatActivity.RESULT_CANCELED;
+import static androidx.appcompat.app.AppCompatActivity.RESULT_OK;
+
+public class ObbManager {
+  // Read OBB permission
+  public static final int PERMISSIONS_REQUEST_READ_OBB = 1;
+  // const
+  private static final String OBB_KEY = null;
+  private static final String OBB_NAME = "main.1.fr.wildcodeschool.dojo_android_obb.obb";
+  private final String RAW_PATH;
+
+  private StorageManager mStorageManager;
+  private AppCompatActivity mActivity;
+
+  public ObbManager(AppCompatActivity activity) {
+    super();
+
+    // Store activity context
+    mActivity = activity;
+
+    // Get storage manager
+    mStorageManager = (StorageManager) mActivity.getSystemService(Context.STORAGE_SERVICE);
+    RAW_PATH = mActivity.getObbDir().getAbsolutePath() + File.separator + OBB_NAME;
+  }
+
+  public int requestReadObbPermission() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      if (ContextCompat.checkSelfPermission(mActivity, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(mActivity, new String[]{READ_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_READ_OBB);
+        return RESULT_CANCELED;
+      }
+    }
+    return RESULT_OK;
+  }
+
+  public void mountMainObb(OnObbStateChangeListener listener) {
+    mStorageManager.mountObb(RAW_PATH, OBB_KEY, listener);
+  }
+
+  public void unmountMainObb(OnObbStateChangeListener listener) {
+    mStorageManager.unmountObb(RAW_PATH, true, listener);
+  }
+
+  @SuppressWarnings("unused")
+  public boolean isObbMounted() {
+    return mStorageManager.isObbMounted(RAW_PATH);
+  }
+
+  @SuppressWarnings("unused")
+  public String getFilePath(String filename) {
+    return mStorageManager.getMountedObbPath(RAW_PATH) + File.separator + filename;
+  }
+}
