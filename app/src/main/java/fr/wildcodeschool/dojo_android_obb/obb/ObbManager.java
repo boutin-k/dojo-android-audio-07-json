@@ -24,18 +24,27 @@ public class ObbManager {
   private static final String OBB_NAME = "main.1.fr.wildcodeschool.dojo_android_obb.obb";
   private final String RAW_PATH;
 
+  private OnObbStateChangeListener mObbListener;
+
   private StorageManager mStorageManager;
   private AppCompatActivity mActivity;
 
-  public ObbManager(AppCompatActivity activity) {
-    super();
-
+  public ObbManager(AppCompatActivity activity, ObbManagerListener listener) {
     // Store activity context
     mActivity = activity;
 
     // Get storage manager
     mStorageManager = (StorageManager) mActivity.getSystemService(Context.STORAGE_SERVICE);
     RAW_PATH = mActivity.getObbDir().getAbsolutePath() + File.separator + OBB_NAME;
+
+    // ObbStateChangeListener
+    mObbListener = new OnObbStateChangeListener() {
+      @Override
+      public void onObbStateChange(String path, int state) {
+        super.onObbStateChange(path, state);
+        if (null != listener) listener.onObbStateChange(path, state);
+      }
+    };
   }
 
   public int requestReadObbPermission() {
@@ -48,20 +57,18 @@ public class ObbManager {
     return RESULT_OK;
   }
 
-  public void mountMainObb(OnObbStateChangeListener listener) {
-    mStorageManager.mountObb(RAW_PATH, OBB_KEY, listener);
+  public void mountMainObb() {
+    mStorageManager.mountObb(RAW_PATH, OBB_KEY, mObbListener);
   }
 
-  public void unmountMainObb(OnObbStateChangeListener listener) {
-    mStorageManager.unmountObb(RAW_PATH, true, listener);
+  public void unmountMainObb() {
+    mStorageManager.unmountObb(RAW_PATH, true, mObbListener);
   }
 
-  @SuppressWarnings("unused")
   public boolean isObbMounted() {
     return mStorageManager.isObbMounted(RAW_PATH);
   }
 
-  @SuppressWarnings("unused")
   public String getFilePath(String filename) {
     return mStorageManager.getMountedObbPath(RAW_PATH) + File.separator + filename;
   }

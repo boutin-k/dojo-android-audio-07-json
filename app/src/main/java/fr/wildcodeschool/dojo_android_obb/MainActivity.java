@@ -4,10 +4,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import fr.wildcodeschool.dojo_android_obb.json.JsonParser;
 import fr.wildcodeschool.dojo_android_obb.obb.ObbManager;
+import fr.wildcodeschool.dojo_android_obb.obb.ObbManagerListener;
 
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.storage.OnObbStateChangeListener;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.util.SparseArray;
@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import static android.os.storage.OnObbStateChangeListener.*;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ObbManagerListener {
   // TAG
   private static final String TAG = "MainActivity";
 
@@ -40,62 +40,59 @@ public class MainActivity extends AppCompatActivity {
 
   // OBB
   private ObbManager mObbManager;
-  private OnObbStateChangeListener mObbListener;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+    // mount the OBB file
+    mObbManager = new ObbManager(this, this);
+    if (RESULT_OK == mObbManager.requestReadObbPermission()) {
+      // Permission has been granted
+      if (!mObbManager.isObbMounted()) {
+        mObbManager.mountMainObb();
+      }
+    }
+  }
+
+  /**
+   * Used for receiving notifications from StorageManager about OBB file states.
+   * @param path String: path to the OBB file the state change has happened on
+   * @param state int: the current state of the OBB
+   */
+  @Override
+  public void onObbStateChange(String path, int state) {
     TextView lStateTextView = findViewById(R.id.state_text_view);
     TextView lJsonTextView  = findViewById(R.id.json_text_view);
     lJsonTextView.setMovementMethod(new ScrollingMovementMethod());
 
-    // ObbStateChangeListener
-    mObbListener = new OnObbStateChangeListener() {
-      @Override
-      public void onObbStateChange(String path, int state) {
-        super.onObbStateChange(path, state);
+    int lStateTextViewColor = R.color.colorError;
+    lStateTextView.setText(OBB_STATE.get(state, UNDEFINED_ERROR));
 
-        lStateTextView.setText(OBB_STATE.get(state, UNDEFINED_ERROR));
-
-        if (MOUNTED == state) {
-          // Get the file from OBB mounted path
-          File file = new File(mObbManager.getFilePath("data.json"));
-
-          // try with statement works here because FileInputStream
-          // implement Closeable interface.
-          try (FileInputStream lFileInputStream = new FileInputStream(file)) {
-            JsonParser.getInstance().readJsonStream(lFileInputStream);
-            Toast.makeText(MainActivity.this, R.string.json_ok, Toast.LENGTH_LONG)
-              .show();
-          } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
-            Toast.makeText(MainActivity.this, R.string.json_ko, Toast.LENGTH_LONG)
-              .show();
-          }
-          // Set the logger color to green
-          lStateTextView.setTextColor(getResources().getColor(R.color.colorMounted));
-          return;
-        }
-        if (UNMOUNTED == state) {
-          // Set the logger color to orange
-          lStateTextView.setTextColor(getResources().getColor(R.color.colorUnMounted));
-          return;
-        }
-        // Set the logger color to red
-        lStateTextView.setTextColor(getResources().getColor(R.color.colorError));
+    if (MOUNTED == state) {
+      // Get the file from OBB mounted path
+      File file = new File(mObbManager.getFilePath("data.json"));
+      // try with statement works here because FileInputStream
+      // implement Closeable interface.
+      try (FileInputStream lFileInputStream = new FileInputStream(file)) {
+        JsonParser.getInstance().readJsonStream(lFileInputStream);
+        Toast.makeText(MainActivity.this, R.string.json_ok, Toast.LENGTH_LONG)
+          .show();
+      } catch (IOException e) {
+        Log.e(TAG, e.getMessage());
+        Toast.makeText(MainActivity.this, R.string.json_ko, Toast.LENGTH_LONG)
+          .show();
       }
-    };
-
-    // mount the OBB file
-    mObbManager = new ObbManager(this);
-    if (RESULT_OK == mObbManager.requestReadObbPermission()) {
-      // Permission has been granted
-      if (!mObbManager.isObbMounted()) {
-        mObbManager.mountMainObb(mObbListener);
-      }
+      // Set the logger color to green
+      lStateTextViewColor = R.color.colorMounted;
     }
+    else if (UNMOUNTED == state) {
+      // Set the logger color to orange
+      lStateTextViewColor = R.color.colorUnMounted;
+    }
+    // Set the logger color
+    lStateTextView.setTextColor(getResources().getColor(lStateTextViewColor));
   }
 
   /**
@@ -113,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
       if (grantResults.length > 0
         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
         // Permission has been granted
-        mObbManager.mountMainObb(mObbListener);
+        mObbManager.mountMainObb();
         Log.i(TAG, "OBB_PERMISSION GRANTED");
       } else {
         Log.e(TAG, "OBB_PERMISSION REFUSED");
@@ -130,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
     super.onDestroy();
     // If obbManager always exists and is always mounted
     if (null != mObbManager && mObbManager.isObbMounted()) {
-      mObbManager.unmountMainObb(mObbListener);
+      mObbManager.unmountMainObb();
     }
   }
 }
