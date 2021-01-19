@@ -43,3 +43,6 @@ public void readJsonStream(InputStream in) {
 * [JSONArray](https://developer.android.com/reference/org/json/JSONArray)
 * [Closeable](https://developer.android.com/reference/java/io/Closeable)
 * [try-with-resources statement](https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html)
+
+## TD suivant
+* [Recyclerview](https://github.com/boutin-k/dojo-android-audio-08-recyclerview)
